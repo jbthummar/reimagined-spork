@@ -1,0 +1,19 @@
+.u-t-center {
+	text-align: center;
+}
+
+.u-m-normal {
+	margin: 5px;
+}
+
+.u-m-left-normal {
+	margin-left: 5px;
+}
+
+.main {
+	padding: 20px 10px;
+} 
+
+.btn.btn-add {
+	margin-top: 20px;
+}

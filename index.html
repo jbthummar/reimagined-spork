@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title> Merchant Dashboard</title>
+	<link href="css/bootstrap.min.css" rel="stylesheet"></link>
+	<link href="css/style.css" rel="stylesheet"></link>
+</head>
+<body>
+
+<div class="main" ng-app="MerchantApp" ng-controller="MerchantController" ng-cloak>
+	<div class="container-fluid">
+		<div class="page-header">
+		  	<h1 class="u-t-center">Payment Details </h1>
+		</div>
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="row">
+					<div class="col-xs-12 col-sm-6">
+						<div class="form-group">
+							<label for="sortBy" class="control-label"> Sort By : </label>
+							<select class="form-control" 
+									ng-options="sort.name for sort in sortOptions" 
+							        ng-model="sortBy"
+							        ng-change="sortData()" >
+							    <option value="" disabled="disabled"> Sort by</option>
+							</select>
+						</div>
+						<div class="form-group" ng-show=" sortBy !== '' ">
+							<label class="control-label"> Order : </label>
+							<input  type="radio" ng-model="sortOrder" ng-value=true ng-change="sortData()" > Ascending </input>
+							<input  type="radio" ng-model="sortOrder" ng-value=false ng-change="sortData()" > Descending </input>
+						</div>
+					</div>
+					<div  class="col-xs-12 col-sm-6">
+						<div class="form-group">
+							<label class="control-label" for="sortBy"> Filter Payment Status : </label>
+							<select class="form-control" 
+									ng-init=" paymentStatusFilter = paymentStatusOptions[0]" 
+									ng-options="paymentStatusOption.name for paymentStatusOption in paymentStatusOptions" 
+							        ng-model="paymentStatusFilter"
+							        ng-change="filterByPaymentStatus()" >
+							    <option value="" disabled="disabled"> Filter by</option>
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-xs-6 ">
+				<div class="form-group">
+					<button name="addPayment" type="button" class="btn btn-primary btn-add" data-toggle="modal" data-target="#addModal">
+						<span class="glyphicon glyphicon-plus"></span>
+						Add Payment
+					</button>
+				</div>
+			</div>
+			<div class="col-xs-6 ">
+				<div class="form-group">
+					<label class="control-label" for="entryPerPage"> Results per page </label>
+					<select name="entryPerPage" 
+							class="form-control"
+							ng-model="pageSize"
+							ng-change="onChangePageSize()"
+							ng-options="pageSizeOption.value as pageSizeOption.value for pageSizeOption in pageSizeOptions">
+        			</select>
+				</div>
+			</div>
+
+			<div class="col-xs-12">
+				<table class="table table-striped table-bordered table-condensed">
+					<thead>
+						<tr>
+							<th> Payment ID </th>
+							<th> Order Date </th>
+							<th> Merchant ID </th>
+							<th> Email </th>
+							<th> Amount </th>
+							<th> Payment Status </th>
+							<th> Action </th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="merchant in merchants">
+							<td> {{merchant.paymentId}} </td>
+							<td> {{merchant.orderDate}}</td>
+							<td> {{merchant.merchatId}}</td>
+							<td> {{merchant.customerEmail}} </td>
+							<td> {{merchant.amount}} </td>
+							<td> {{merchant.paymentStatus}} </td>
+							<td> 
+								<button type="button" class="btn btn-primary u-m-left-normal" ng-click="editMerchantDetails(merchant)" title="Edit">
+								  	<span class="glyphicon glyphicon-edit"></span>
+								</button>
+								<button type="button" class="btn btn-primary u-m-left-normal" ng-click="deleteMerchant(merchant)" title="Delete">
+								  	<span class="glyphicon glyphicon-remove"></span>
+								</button>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="col-xs-12">
+				<div class="u-t-center">
+					<ul ng-if="pagination.pages.length" class="pagination">
+		                <li ng-class="{disabled:pagination.currentPage === 1}">
+		                    <a href="#" ng-click="pagination.currentPage === 1 ? null : setPage(1)">First</a>
+		                </li>
+		                <li ng-class="{disabled:pagination.currentPage === 1}">
+		                    <a href="#" ng-click="pagination.currentPage === 1 ? null : setPage( pagination.currentPage - 1)">Previous</a>
+		                </li>
+		                <li ng-repeat="page in pagination.pages" ng-class="{active:pagination.currentPage === page}">
+		                    <a href="#" ng-click="setPage(page)">{{page}}</a>
+		                </li>                
+		                <li ng-class="{disabled:pagination.currentPage === pagination.totalPages}">
+		                    <a href="#" ng-click=" pagination.currentPage === pagination.totalPages ? null : setPage(pagination.currentPage + 1) ">Next</a>
+		                </li>
+		                <li ng-class="{disabled:pagination.currentPage === pagination.totalPages}">
+		                    <a href="#" ng-click="pagination.currentPage === pagination.totalPages ? null : setPage(pagination.totalPages)">Last</a>
+		                </li>
+		            </ul>
+		        </div>
+			</div>
+		</div>
+
+		<div id="addModal" class="modal fade" role="dialog">
+		  	<div class="modal-dialog">
+
+		    	<!-- Modal content-->
+		    	<div class="modal-content" ng-form name="addMerchantForm">
+		      		<div class="modal-header">
+		        		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		        		<h4 class="modal-title">Add Payment</h4>
+		      		</div>
+		      		<div class="modal-body">
+		      			<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="paymentId">Payment Id </label>
+			      				<div class="col-sm-10">
+				        			<input type="number" name="paymentId" class="form-control"  ng-model="addModal.paymentId" placeholder="eg. 123456"  required ng-pattern="/^(\d){6}/" min="0" max="999999"></input>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && addMerchantForm.paymentId.$error.required">Required</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && ( addMerchantForm.paymentId.$error.pattern || addMerchantForm.paymentId.$error.max)">Enter 6 digit payment id</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted &&  addMerchantForm.paymentId.$error.min">Can not be negative</div>
+				        		</div>
+				        	</div>
+			        	</div>
+			        	<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="orderDate">Order Date </label>
+			      				<div class="col-sm-10">
+				        			<input type="text" name="orderDate" class="form-control" ng-model="addModal.orderDate" placeholder="mm/dd/yyyy" required ng-pattern="/^(0[1-9]|1[0-2])\/(0[1-9]|1\d|2\d|3[01])\/(19|20)\d{2}$/"></input>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && addMerchantForm.orderDate.$error.required">Required</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && addMerchantForm.orderDate.$error.pattern ">Enter in mm/dd/yyyy format</div>
+				        		</div>
+				        	</div>
+			        	</div>
+			        	<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="merchantId">Merchant Id</label>
+			      				<div class="col-sm-10">
+				        			<input type="number" name="merchantId" class="form-control" ng-model="addModal.merchatId" placeholder="eg. 1234" required max="9999" ng-pattern="/^(\d){4}/"></input>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && addMerchantForm.merchantId.$error.required">Required</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && ( addMerchantForm.merchantId.$error.pattern || addMerchantForm.merchantId.$error.max)">Should be of 4 digits</div>
+				        		</div>
+				        	</div>
+			        	</div>
+			        	<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="customerEmail">Email</label>
+			      				<div class="col-sm-10">
+				        			<input type="email" name="customerEmail" class="form-control" ng-model="addModal.customerEmail" placeholder="abc@def.com" required></input>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && addMerchantForm.customerEmail.$error.required">Required</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && addMerchantForm.customerEmail.$error.email">Invalid email</div>
+				        		</div>
+				        	</div>
+			        	</div>
+			        	<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="amount">Amount</label>
+			      				<div class="col-sm-10">
+				        			<input type="number" name="amount" class="form-control" ng-model="addModal.amount" placeholder="eg. 2000" min="0" required></input>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && addMerchantForm.amount.$error.required">Required</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && addMerchantForm.amount.$error.number">Please enter number</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="addMerchantForm.$submitted && addMerchantForm.amount.$error.min">Should be minimum 0</div>
+				        		</div>
+				        	</div>
+			        	</div>
+			        	<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="paymentStatus">Payment status</label>
+			      				<div class="col-sm-10">
+				        			<select name="paymentStatus" class="form-control" ng-model="addModal.paymentStatus" required>
+				        				<option value="Refunded">Refunded</option>
+				        				<option value="Dropped">Dropped</option>
+				        				<option value="Failed">Failed</option>
+				        				<option value="Initiated">Initiated</option>
+				        				<option value="Success">Success</option>
+				        			</select>
+				        		</div>
+				        	</div>
+			        	</div>
+		      		</div>
+		      		<div class="modal-footer">
+		        		<button type="submit" class="btn btn-default" ng-click="onAddMerchant(addMerchantForm)">Add</button>
+		        		<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		      		</div>
+		    	</div>
+		 	 </div>
+		</div>
+		<div id="editModal" class="modal fade" role="dialog">
+		  	<div class="modal-dialog">
+
+		    	<!-- Modal content-->
+		    	<div class="modal-content" ng-form name="editMerchantForm">
+		      		<div class="modal-header">
+		        		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		        		<h4 class="modal-title">Edit Payment Details</h4>
+		      		</div>
+		      		<div class="modal-body">
+		      			<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="paymentId">Payment Id </label>
+			      				<div class="col-sm-10">
+				        			<input type="number" name="paymentId" class="form-control"  ng-model="editModal.paymentId" placeholder="eg. 123456"  required ng-pattern="/^(\d){6}/" min="0" max="999999"></input>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && editMerchantForm.paymentId.$error.required">Required</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && ( editMerchantForm.paymentId.$error.pattern || editMerchantForm.paymentId.$error.max)">Enter 6 digit payment id</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted &&  editMerchantForm.paymentId.$error.min">Can not be negative</div>
+				        		</div>
+				        	</div>
+			        	</div>
+			        	<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="orderDate">Order Date </label>
+			      				<div class="col-sm-10">
+				        			<input type="text" name="orderDate" class="form-control" ng-model="editModal.orderDate" placeholder="mm/dd/yyyy" required ng-pattern="/^(0[1-9]|1[0-2])\/(0[1-9]|1\d|2\d|3[01])\/(19|20)\d{2}$/"></input>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && editMerchantForm.orderDate.$error.required">Required</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && editMerchantForm.orderDate.$error.pattern ">Enter in mm/dd/yyyy format</div>
+				        		</div>
+				        	</div>
+			        	</div>
+			        	<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="merchantId">Merchant Id</label>
+			      				<div class="col-sm-10">
+				        			<input type="number" name="merchantId" class="form-control" ng-model="editModal.merchatId" placeholder="eg. 1234" required max="9999" ng-pattern="/^(\d){4}/"></input>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && editMerchantForm.merchantId.$error.required">Required</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && ( editMerchantForm.merchantId.$error.pattern || editMerchantForm.merchantId.$error.max)">Should be of 4 digits</div>
+				        		</div>
+				        	</div>
+			        	</div>
+			        	<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="customerEmail">Email</label>
+			      				<div class="col-sm-10">
+				        			<input type="email" name="customerEmail" class="form-control" ng-model="editModal.customerEmail" placeholder="abc@def.com" required></input>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && editMerchantForm.customerEmail.$error.required">Required</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && editMerchantForm.customerEmail.$error.email">Invalid email</div>
+				        		</div>
+				        	</div>
+			        	</div>
+			        	<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="amount">Amount</label>
+			      				<div class="col-sm-10">
+				        			<input type="number" name="amount" class="form-control" ng-model="editModal.amount" placeholder="eg. 2000" min="0" required></input>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && editMerchantForm.amount.$error.required">Required</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && editMerchantForm.amount.$error.number">Please enter number</div>
+				        			<div class="alert alert-danger" role="alert" ng-show="editMerchantForm.$submitted && editMerchantForm.amount.$error.min">Should be minimum 0</div>
+				        		</div>
+				        	</div>
+			        	</div>
+			        	<div class="form-group">
+		      				<div class="row">
+			      				<label  class="col-sm-2 control-label" for="paymentStatus">Payment status</label>
+			      				<div class="col-sm-10">
+				        			<select name="paymentStatus" class="form-control" ng-model="editModal.paymentStatus" required>
+				        				<option value="Refunded">Refunded</option>
+				        				<option value="Dropped">Dropped</option>
+				        				<option value="Failed">Failed</option>
+				        				<option value="Initiated">Initiated</option>
+				        				<option value="Success">Success</option>
+				        			</select>
+				        		</div>
+				        	</div>
+			        	</div>
+		      		</div>
+		      		<div class="modal-footer">
+		        		<button type="submit" class="btn btn-default" ng-click="onEditMerchant(editMerchantForm)">Save Changes</button>
+		        		<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		      		</div>
+		    	</div>
+		 	 </div>
+		</div>
+
+	</div>
+</div>
+
+</body>
+
+<script src="js/lib/angular.js"></script>
+<script src="js/lib/jquery-2.1.4.min.js"></script>
+<script src="js/lib/bootstrap.min.js"></script>
+<script src="js/main.js"></script>
+
+</html>
